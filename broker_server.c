@@ -1,68 +1,104 @@
 #include "csapp.h"
+#include <pthread.h>
+#include <getopt.h>
+#include <limits.h>
+#include <pthread.h>
+#include <syslog.h>
+#include <fcntl.h>
+#include "common.h"
 
-void echo(int connfd);
+void forward_message(int connfd);
+void *thread(void *vargp);
 
-int conn_lst[10];
-int conn_avl = 0;
+int conn_lst[2];
+int conn_ind = 0;
 
+pthread_t thread_id;
 
 int main(int argc, char **argv)
 {
-	int listenfd, connfd;
+	
+	//Sockets
+	int listenfd, *connfd;
 	unsigned int clientlen;
+	//Direcciones y puertos
 	struct sockaddr_in clientaddr;
-	struct hostent *hp;
-	char *haddrp, *port;
+	//struct hostent *hp;
+	char *port;
+	
 
 	if (argc != 2) {
 		fprintf(stderr, "usage: %s <port>\n", argv[0]);
 		exit(0);
 	}
+
 	port = argv[1];
+	//Valida el puerto
+	int port_n = atoi(port);
+	if(port_n <= 0 || port_n > USHRT_MAX){
+		fprintf(stderr, "Puerto: %s invalido. Ingrese un número entre 1 y %d.\n", port, USHRT_MAX);
+		return 1;
+	}
 
 	printf("Waiting for connections...\n");
 	listenfd = Open_listenfd(port);
+
+	
+	printf("server escuchando en puerto %s...\n", port);
+
+	if(listenfd < 0)
+		exit(-1);
+
+
 	while (1) {
 		clientlen = sizeof(clientaddr);
+		connfd = malloc(sizeof(int));
+		*connfd = accept(listenfd, (struct sockaddr *)&clientaddr, &clientlen);
+		
+		pthread_create(&thread_id, NULL, thread, connfd);
 
-        //se atiende mediante concurrencia
-        if(fork()!=-1 && (connfd = Accept(listenfd, (SA *)&clientaddr, &clientlen)) ){
-            
-            /* Determine the domain name and IP address of the client */
-		    hp = Gethostbyaddr((const char *)&clientaddr.sin_addr.s_addr,
-					sizeof(clientaddr.sin_addr.s_addr), AF_INET);
-		    haddrp = inet_ntoa(clientaddr.sin_addr);
-		
-		    if (hp)
-			    printf("\n>> Server connected to %s (%s)\n\n", hp->h_name, haddrp);
-		    else
-			    printf("server connected to %s\n", haddrp);
-		
-		    echo(connfd);
-
-		    Close(connfd); //cierra conexion del cliente
-		    printf("\nServer disconnected from %s\n\n", haddrp);
-        }
-		
 	}
-	exit(0);
+
 }
 
-void echo(int connfd)
+void forward_message(int connfd)
 {
 	size_t n;
 	char buf[MAXLINE];
-	rio_t rio;
+	rio_t rio_src;
+	rio_t rio_dst;
 
-	Rio_readinitb(&rio, connfd);
-	while((n = Rio_readlineb(&rio, buf, MAXLINE))) {
+	while(conn_lst[1] != 5);
+	
+	int publisher = conn_lst[0];
+	int suscriber = conn_lst[1];
+
+	Rio_readinitb(&rio_src, publisher);
+	Rio_readinitb(&rio_dst, suscriber);
+
+	while((n = Rio_readlineb(&rio_src, buf, MAXLINE))) {
 		if (strcmp(buf,"help\n")==0)
-			Rio_writen(connfd, "NO HELP FOR YOU\n", 16);
+			Rio_writen(suscriber, "NO HELP FOR YOU\n", 16);
 		else{
-			Rio_writen(connfd, buf, n);
+			Rio_writen(suscriber, buf, n);
 			buf[strlen(buf)-1] = '\0';
 			printf("server received %lu bytes (%s)\n", n,buf);
 			
 		}
 	}
+}
+
+
+void *thread(void *vargp)
+{
+	int connfd = *((int *) vargp);
+	//se agrega variables de reevio
+	conn_lst[conn_ind++] = connfd;  //poner semaforos
+	printf("Socket: %d\n",connfd);
+
+	pthread_detach(pthread_self());
+	free(vargp);
+	forward_message(connfd);
+	close(connfd);
+	return NULL;
 }

@@ -7,7 +7,7 @@ int main(int argc, char **argv)
 	int clientfd;
 	char *port;
 	char *host;
-	char buf[MAXLINE] = "CPU_USAGE 9%\n";
+	char buf[MAXLINE] = "7%\n";
 	rio_t rio;
 
 	if (argc != 3) {
@@ -23,11 +23,16 @@ int main(int argc, char **argv)
 	Rio_readinitb(&rio, clientfd);
 	printf("Succesfully connected to %s\n",host);
 
+    
+    printf("Pasa de esta linea?");
+    
 	while (1) {
-		sleep(5);
-		Rio_writen(clientfd, buf, strlen(buf));
-		printf("Se ha enviado la informacion de estado...\n");
+        
+		if(Rio_readlineb(&rio, buf, MAXLINE)){
+            Fputs(buf, stdout);
+        }    
 	}
+
 
 	Close(clientfd);
 	exit(0);

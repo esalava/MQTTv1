@@ -5,7 +5,7 @@ CFLAGS = -O2 -Wall -I .
 # Others systems will probably require something different.
 LIB = -lpthread
 
-all: broker publisher
+all: broker publisher suscriber
 
 broker: broker_server.c csapp.o
 	$(CC) $(CFLAGS) -o broker broker_server.c csapp.o $(LIB)
@@ -13,8 +13,11 @@ broker: broker_server.c csapp.o
 publisher: pub_client.c csapp.o
 	$(CC) $(CFLAGS) -o publisher pub_client.c csapp.o $(LIB)
 
+suscriber: sub_client.c csapp.o
+	$(CC) $(CFLAGS) -o suscriber sub_client.c csapp.o $(LIB)
+
 csapp.o: csapp.c
 	$(CC) $(CFLAGS) -c csapp.c
 
 clean:
-	rm -f *.o client server *~
+	rm -f *.o broker broker suscriber *~
