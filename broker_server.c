@@ -12,12 +12,20 @@
 #define SEM_CONN_CONTROL "/conn_control"
 #define SEM_MUTEX "/mutex"
 
-void forward_message(int connfd);
+void forward_message(int connfd_pub, int connfd_sus);
 void *thread(void *vargp);
 void split(char *linea, char *delim, char *argv[]);
+int find_index_by_client_name(char *client_name);
+void forward_messages();
 
-int conn_lst[2];
-int conn_ind = 0;
+//int conn_lst[2];
+//int conn_ind = 0;
+
+char *client_name_list[10];
+int client_fd_list[10];
+int fd_idx = 0;
+char *client_sus_list[10];
+
 
 pthread_t thread_id;
 
@@ -89,69 +97,84 @@ int main(int argc, char **argv)
 
 }
 
-void forward_message(int connfd_sus)
+void forward_message(int connfd_pub, int connfd_sus)
 {
 	size_t n;
 	char buf[MAXLINE];
 	rio_t rio_src;
 	rio_t rio_dst;
-	char buf_suscription[MAXLINE];
 
-	sem_wait(sem_control);
 	
-	int publisher = conn_lst[0];
-	int suscriber = conn_lst[1];
+
+	int publisher = connfd_pub;
+	int suscriber = connfd_sus;
 
 	Rio_readinitb(&rio_src, publisher);
 	Rio_readinitb(&rio_dst, suscriber);
 
-	Rio_readlineb(&rio_dst, buf_suscription, MAXLINE);
-	printf("%s\n", buf_suscription);
-	
+	for(int i = 0; i < 2; i++){
+		if((n = Rio_readlineb(&rio_src, buf, MAXLINE))){	
 
-	if(strcmp(buf_suscription,"node1/cpu_usage\n")==0) {
-		while((n = Rio_readlineb(&rio_src, buf, MAXLINE))) {
-			//char *buf_cpy[MAXLINE];
 			char *pub_available_info[3];
-
-			//memcpy(&buf_cpy, buf, MAXLINE);
-
 			split(buf, ",", pub_available_info);
-			printf("Se re-envia: [len: %ld,info: %s]\n", strlen(pub_available_info[1]), pub_available_info[1]);
+			printf("Se re-envia: [len: %ld,info: %s] desde fd_src:[%d] -> fd_dst:[%d]\n", 
+				strlen(pub_available_info[1]), 
+				pub_available_info[1],
+				publisher,
+				suscriber);
+
 			strcat(pub_available_info[1], "\n");
 			Rio_writen(suscriber, pub_available_info[1], strlen(pub_available_info[1]));
-
-			//close(suscriber);
-			//break;
+			
+		} else {
+			printf("Wait for the next message...\n");
 		}
-	} 
-	
-
-	
+	}
 }
 
 
 void *thread(void *vargp)
 {
 	int connfd = *((int *) vargp);
+	pthread_detach(pthread_self());
+	printf("New socket: %d\n",connfd);
 
-	sem_wait(sem_mutex);
+	sem_wait(sem_mutex); //seccion critica
 
-	conn_lst[conn_ind++] = connfd;  //se agrega sockets de reevio
-	if(conn_ind == 2){
+	client_fd_list[fd_idx] = connfd;  //se agrega sockets de reevio
+
+	//orden de los descriptores
+	char buf_node_name[MAXLINE];
+	char buf_suscription[MAXLINE];
+	
+	rio_t rio;
+	Rio_readinitb(&rio, connfd);
+	Rio_readlineb(&rio, buf_node_name, MAXLINE);
+	Rio_readlineb(&rio, buf_suscription, MAXLINE);
+	
+	//parsing
+	buf_node_name[strlen(buf_node_name)-1] = '\0';
+	buf_suscription[strlen(buf_suscription)-1] = '\0';
+
+	client_name_list[fd_idx] = buf_node_name;
+	client_sus_list[fd_idx] = buf_suscription;
+
+	fd_idx += 1;
+
+	if(fd_idx >= 2){
 		sem_post(sem_control);
 	}
 
-	sem_post(sem_mutex);
+	sem_post(sem_mutex); //fin seccion critica
 
-	printf("Socket: %d\n",connfd);
-
-	pthread_detach(pthread_self());
 	free(vargp);
-	forward_message(connfd);
-	close(connfd);
+
+	forward_messages(connfd);
+	//while(1);
+	//close(connfd);
 	return NULL;
 }
+
 
 void split(char *linea, char *delim, char *argv[])  
 {
@@ -166,4 +189,38 @@ void split(char *linea, char *delim, char *argv[])
         i++;
         token = strtok(NULL, delim);
     }
+}
+
+int find_index_by_client_name(char *client_name){
+    for(int i = 0; client_name_list[i] != NULL; i++){
+        if(strcmp(client_name, client_name_list[i]) == 0){
+            return i;
+        }   
+    }
+    return -1;
+}
+
+void forward_messages(){
+	char *publisher;
+	char *suscriber;
+	int fd_pub;
+	int fd_sus;
+
+	sem_wait(sem_control);
+	while(1){
+    	for(int i = 0; client_sus_list[i] != NULL; i++){
+        	if(strcmp(client_sus_list[i], "NONE") != 0){
+            	publisher = client_sus_list[i];
+            	suscriber = client_name_list[i];
+            	printf("Publisher:{%s}, Suscriber:{%s}\n", publisher, suscriber);
+
+				fd_pub = client_fd_list[find_index_by_client_name(publisher)];
+				fd_sus = client_fd_list[find_index_by_client_name(suscriber)];
+			
+				printf("Intento de envio desde fd_pub:[%d] a fd_sus:[%d]\n", fd_pub, fd_sus);
+			
+				forward_message(fd_pub, fd_sus);
+        	}
+   	 	}	
+	}
 }
