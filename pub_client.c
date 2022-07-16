@@ -1,13 +1,12 @@
 #include "csapp.h"
 #include <unistd.h>
 
-
 int main(int argc, char **argv)
 {
 	int clientfd;
 	char *port;
 	char *host;
-	char buf[MAXLINE] = "CPU_USAGE 9%\n";
+	char pub_info_buf[MAXLINE] = "9,12,42\n";
 	rio_t rio;
 
 	if (argc != 3) {
@@ -25,7 +24,7 @@ int main(int argc, char **argv)
 
 	while (1) {
 		sleep(5);
-		Rio_writen(clientfd, buf, strlen(buf));
+		Rio_writen(clientfd, pub_info_buf, strlen(pub_info_buf));
 		printf("Se ha enviado la informacion de estado...\n");
 	}
 

@@ -6,14 +6,23 @@
 #include <syslog.h>
 #include <fcntl.h>
 #include "common.h"
+#include <semaphore.h>
+#include <sys/shm.h>
+
+#define SEM_CONN_CONTROL "/conn_control"
+#define SEM_MUTEX "/mutex"
 
 void forward_message(int connfd);
 void *thread(void *vargp);
+void split(char *linea, char *delim, char *argv[]);
 
 int conn_lst[2];
 int conn_ind = 0;
 
 pthread_t thread_id;
+
+sem_t *sem_control;
+sem_t *sem_mutex;
 
 int main(int argc, char **argv)
 {
@@ -26,6 +35,25 @@ int main(int argc, char **argv)
 	//struct hostent *hp;
 	char *port;
 	
+	//set up semaphores
+	sem_unlink(SEM_CONN_CONTROL);
+	sem_unlink(SEM_MUTEX);
+
+	sem_control = sem_open(SEM_CONN_CONTROL, O_CREAT, 0660, 0);
+
+	if(sem_control == SEM_FAILED){
+		perror("sem_open/conn_control");
+		exit(EXIT_FAILURE);
+	}
+
+	sem_mutex = sem_open(SEM_MUTEX, O_CREAT, 0660, 1);
+
+	if(sem_mutex == SEM_FAILED){
+
+		perror("/mutex");
+		exit(EXIT_FAILURE);
+	}
+ 
 
 	if (argc != 2) {
 		fprintf(stderr, "usage: %s <port>\n", argv[0]);
@@ -61,14 +89,15 @@ int main(int argc, char **argv)
 
 }
 
-void forward_message(int connfd)
+void forward_message(int connfd_sus)
 {
 	size_t n;
 	char buf[MAXLINE];
 	rio_t rio_src;
 	rio_t rio_dst;
+	char buf_suscription[MAXLINE];
 
-	while(conn_lst[1] != 5);
+	sem_wait(sem_control);
 	
 	int publisher = conn_lst[0];
 	int suscriber = conn_lst[1];
@@ -76,24 +105,45 @@ void forward_message(int connfd)
 	Rio_readinitb(&rio_src, publisher);
 	Rio_readinitb(&rio_dst, suscriber);
 
-	while((n = Rio_readlineb(&rio_src, buf, MAXLINE))) {
-		if (strcmp(buf,"help\n")==0)
-			Rio_writen(suscriber, "NO HELP FOR YOU\n", 16);
-		else{
-			Rio_writen(suscriber, buf, n);
-			buf[strlen(buf)-1] = '\0';
-			printf("server received %lu bytes (%s)\n", n,buf);
-			
+	Rio_readlineb(&rio_dst, buf_suscription, MAXLINE);
+	printf("%s\n", buf_suscription);
+	
+
+	if(strcmp(buf_suscription,"node1/cpu_usage\n")==0) {
+		while((n = Rio_readlineb(&rio_src, buf, MAXLINE))) {
+			//char *buf_cpy[MAXLINE];
+			char *pub_available_info[3];
+
+			//memcpy(&buf_cpy, buf, MAXLINE);
+
+			split(buf, ",", pub_available_info);
+			printf("Se re-envia: [len: %ld,info: %s]\n", strlen(pub_available_info[1]), pub_available_info[1]);
+			strcat(pub_available_info[1], "\n");
+			Rio_writen(suscriber, pub_available_info[1], strlen(pub_available_info[1]));
+
+			//close(suscriber);
+			//break;
 		}
-	}
+	} 
+	
+
+	
 }
 
 
 void *thread(void *vargp)
 {
 	int connfd = *((int *) vargp);
-	//se agrega variables de reevio
-	conn_lst[conn_ind++] = connfd;  //poner semaforos
+
+	sem_wait(sem_mutex);
+
+	conn_lst[conn_ind++] = connfd;  //se agrega sockets de reevio
+	if(conn_ind == 2){
+		sem_post(sem_control);
+	}
+
+	sem_post(sem_mutex);
+
 	printf("Socket: %d\n",connfd);
 
 	pthread_detach(pthread_self());
@@ -101,4 +151,19 @@ void *thread(void *vargp)
 	forward_message(connfd);
 	close(connfd);
 	return NULL;
+}
+
+void split(char *linea, char *delim, char *argv[])  
+{
+    char *token;
+    int i = 0;
+
+    token = strtok(linea, delim);
+
+    while (token != NULL)
+    {
+        argv[i] = token;
+        i++;
+        token = strtok(NULL, delim);
+    }
 }
