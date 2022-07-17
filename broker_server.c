@@ -11,12 +11,14 @@
 
 #define SEM_CONN_CONTROL "/conn_control"
 #define SEM_MUTEX "/mutex"
+#define SHARINGTIME 1
 
-void forward_message(int connfd_pub, int connfd_sus);
+void forward_message(int connfd_pub, int connfd_sus, int topic);
 void *thread(void *vargp);
 void split(char *linea, char *delim, char *argv[]);
 int find_index_by_client_name(char *client_name);
 void forward_messages();
+int find_topic_by_name(char *topic);
 
 //int conn_lst[2];
 //int conn_ind = 0;
@@ -25,6 +27,7 @@ char *client_name_list[10];
 int client_fd_list[10];
 int fd_idx = 0;
 char *client_sus_list[10];
+int topic_list[10];   //posible valores 0 = CPU, 1 = RAM, 2 = TASKS
 
 
 pthread_t thread_id;
@@ -97,14 +100,12 @@ int main(int argc, char **argv)
 
 }
 
-void forward_message(int connfd_pub, int connfd_sus)
+void forward_message(int connfd_pub, int connfd_sus, int topic)
 {
 	size_t n;
 	char buf[MAXLINE];
 	rio_t rio_src;
 	rio_t rio_dst;
-
-	
 
 	int publisher = connfd_pub;
 	int suscriber = connfd_sus;
@@ -112,22 +113,22 @@ void forward_message(int connfd_pub, int connfd_sus)
 	Rio_readinitb(&rio_src, publisher);
 	Rio_readinitb(&rio_dst, suscriber);
 
-	for(int i = 0; i < 2; i++){
-		if((n = Rio_readlineb(&rio_src, buf, MAXLINE))){	
+	for(int i = 0; i < SHARINGTIME; i++){
+		if((n = Rio_readlineb(&rio_src, buf, MAXLINE)) && topic != -1){	
 
 			char *pub_available_info[3];
 			split(buf, ",", pub_available_info);
 			printf("Se re-envia: [len: %ld,info: %s] desde fd_src:[%d] -> fd_dst:[%d]\n", 
 				strlen(pub_available_info[1]), 
-				pub_available_info[1],
+				pub_available_info[topic],
 				publisher,
 				suscriber);
 
-			strcat(pub_available_info[1], "\n");
-			Rio_writen(suscriber, pub_available_info[1], strlen(pub_available_info[1]));
+			strcat(pub_available_info[topic], "\n");
+			Rio_writen(suscriber, pub_available_info[topic], strlen(pub_available_info[topic]));
 			
 		} else {
-			printf("Wait for the next message...\n");
+			printf("Espere al siguiente mensaje...\n");
 		}
 	}
 }
@@ -145,19 +146,36 @@ void *thread(void *vargp)
 
 	//orden de los descriptores
 	char buf_node_name[MAXLINE];
-	char buf_suscription[MAXLINE];
+	
+	char *buf_suscription_info[2];       //puntero hacia el nombre = [0] y el topico = [1]
+	char buf_sus_info[MAXLINE];			 //buffer donde se guarda la informacion
+
 	
 	rio_t rio;
 	Rio_readinitb(&rio, connfd);
 	Rio_readlineb(&rio, buf_node_name, MAXLINE);
-	Rio_readlineb(&rio, buf_suscription, MAXLINE);
+	Rio_readlineb(&rio, buf_sus_info, MAXLINE);
 	
 	//parsing
-	buf_node_name[strlen(buf_node_name)-1] = '\0';
-	buf_suscription[strlen(buf_suscription)-1] = '\0';
-
+	buf_node_name[strlen(buf_node_name)-1] = '\0'; //se obtiene el nombre del nodo
 	client_name_list[fd_idx] = buf_node_name;
-	client_sus_list[fd_idx] = buf_suscription;
+
+	buf_sus_info[strlen(buf_sus_info)-1] = '\0';
+
+	 
+	
+	if(strcmp(buf_sus_info, "NONE") == 0 ){  
+		//en caso de que no tenga ninguna suscripcion no se guarda ningun topico (su metrica)
+		printf("No tiene ninguna suscripcion\n");
+		client_sus_list[fd_idx] = buf_sus_info;
+
+	} else {
+		//se guardan las metricas requeridas
+		split(buf_sus_info, "/", buf_suscription_info);
+		printf("[%s] esta suscrito a: [%s] del topico [%s]\n", client_name_list[fd_idx], buf_suscription_info[0], buf_suscription_info[1]);
+		client_sus_list[fd_idx] = buf_suscription_info[0];
+		topic_list[fd_idx] = find_topic_by_name(buf_suscription_info[1]);
+	}
 
 	fd_idx += 1;
 
@@ -200,11 +218,26 @@ int find_index_by_client_name(char *client_name){
     return -1;
 }
 
+int find_topic_by_name(char *topic){
+    
+    if(strcmp(topic, "cpu") == 0){
+        return 0;
+    } else if (strcmp(topic, "ram") == 0) {
+		return 1;
+	} else  if (strcmp(topic, "tasks") == 0){
+		return 2;
+	}
+
+	return -1;
+	
+}
+
 void forward_messages(){
 	char *publisher;
 	char *suscriber;
 	int fd_pub;
 	int fd_sus;
+	int topic_number;
 
 	sem_wait(sem_control);
 	while(1){
@@ -212,14 +245,15 @@ void forward_messages(){
         	if(strcmp(client_sus_list[i], "NONE") != 0){
             	publisher = client_sus_list[i];
             	suscriber = client_name_list[i];
-            	printf("Publisher:{%s}, Suscriber:{%s}\n", publisher, suscriber);
+				topic_number = topic_list[i];
+            	printf("Publisher:{%s}, Suscriber:{%s}, Topic {%d}\n", publisher, suscriber, topic_number);
 
 				fd_pub = client_fd_list[find_index_by_client_name(publisher)];
 				fd_sus = client_fd_list[find_index_by_client_name(suscriber)];
 			
 				printf("Intento de envio desde fd_pub:[%d] a fd_sus:[%d]\n", fd_pub, fd_sus);
 			
-				forward_message(fd_pub, fd_sus);
+				forward_message(fd_pub, fd_sus, topic_number);
         	}
    	 	}	
 	}
