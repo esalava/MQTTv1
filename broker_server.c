@@ -9,6 +9,8 @@
 #include <semaphore.h>
 #include <sys/shm.h>
 #include "MQTTconfig.h"
+#include <signal.h>
+#include <unistd.h>
 
 #define SEM_CONN_CONTROL "/conn_control"
 #define SEM_MUTEX "/mutex"
@@ -23,6 +25,7 @@ void forward_messages();
 int find_topic_by_name(char *topic);
 
 
+
 char *client_name_list[LIMIT_CONN_CLIENTS];//lista que contiene los nombres de los nodos conectados
 int client_fd_list[LIMIT_CONN_CLIENTS];    //lista paralela con los descriptores que se encuentran conectados
 int fd_idx = 0;							   //lleva la cuenta de cuantos se encuentran conectados 
@@ -35,8 +38,18 @@ pthread_t thread_id;
 sem_t *sem_control;
 sem_t *sem_mutex;
 
+void sig_handler(int signum){
+	for(int i = 0; i < fd_idx; i++){
+		close(client_fd_list[i]);
+		client_fd_list[i] = 0;
+	}
+	fd_idx = 0;
+	exit(0);
+}
+
 int main(int argc, char **argv)
 {
+	signal(SIGINT, sig_handler);
 	
 	//Sockets
 	int listenfd, *connfd;

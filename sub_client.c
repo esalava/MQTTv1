@@ -56,9 +56,10 @@ int main(int argc, char **argv)
 		if(Rio_readlineb(&rio, buf, MAXLINE)){
 			printf("%s: ",suscription_topic);
             Fputs(buf, stdout);
-        }    
+        } else {
+			break;
+		}
 	}
-
 
 	Close(clientfd);
 	exit(0);
