@@ -1,9 +1,10 @@
 #include "csapp.h"
 #include <unistd.h>
 #include <string.h>
+#include "MQTTconfig.h"
 
-char *host = "127.0.0.1";
-char *port = "8090";
+char *host = BROKER_HOST;//"127.0.0.1";
+char *port = BROKER_PORT;//"8090";
 
 int main(int argc, char **argv)
 {
@@ -19,7 +20,12 @@ int main(int argc, char **argv)
 	
 
 	if (argc != 3) {
-		fprintf(stderr, "usage: %s <host> <port>\n", argv[0]);
+		fprintf(stderr, "usage: %s <node_name> <suscription_topic>\n", argv[0]);
+		fprintf(stderr, "suscription_topic: <node>/<topic>\n");
+		fprintf(stderr, "availables topics:\n");
+		fprintf(stderr, " -cpu (shows node's cpu status)\n");
+		fprintf(stderr, " -ram (shows node's ram status)\n");
+		fprintf(stderr, " -tasks (shows node's tasks status)\n");
 		exit(0);
 	}
 	
@@ -41,12 +47,14 @@ int main(int argc, char **argv)
 	/* fin de formato de argumentos */
 
 	Rio_readinitb(&rio, clientfd);
-	Rio_writen(clientfd, node_name_buf, strlen(node_name_buf));
-	Rio_writen(clientfd, suscription_topic_buf, strlen(suscription_topic_buf));
-	printf("Name: %s Suscription: %s Connected to: %s\n\n\n", node_name, suscription_topic, host);
+	Rio_writen(clientfd, node_name_buf, strlen(node_name_buf));										//se envia el nombre del nodo al broker
+	Rio_writen(clientfd, suscription_topic_buf, strlen(suscription_topic_buf));						//se envia el topico del cual se encuentra subscrito
+	printf("Name: %s Suscription: %s Connected to: %s\n\n\n", node_name, suscription_topic, host);  //mensaje de control
 	
+	//se mantiene en constante escucha de lo mensajes que provengan del broker
 	while (1) {
 		if(Rio_readlineb(&rio, buf, MAXLINE)){
+			printf("%s: ",suscription_topic);
             Fputs(buf, stdout);
         }    
 	}

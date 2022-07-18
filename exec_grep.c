@@ -1,5 +1,5 @@
 /* 
-    Programa encargado de filtrar la informacion por el uso del grep
+    Programa encargado de filtrar la informacion del archivo top.txt con el uso del grep
 
 */
 
@@ -16,6 +16,8 @@
 
 #define MAXLINE 20
 
+int fd;
+
 void open_program(char  ** arglist);
 void separar_tokens(char *linea, char *delim, char *argv[]);
 
@@ -26,7 +28,13 @@ int main(int argc, char *argv[]){
     
     char delim[2] = " "; /* character delimitation */
     char *arglist[MAXLINE];
-    
+
+    fd = open("info.txt",  O_RDWR | O_CREAT , S_IRUSR | S_IWUSR);
+
+    dup2(fd, 1); //redirige stdout al fd
+    dup2(fd, 2); //redirige stderr al fd
+
+
     separar_tokens(cpu_command_buf, delim, arglist);
     open_program(arglist);
 
@@ -36,17 +44,15 @@ int main(int argc, char *argv[]){
     separar_tokens(mem_command_buf, delim, arglist);
     open_program(arglist);
     
+    
+    close(fd);
+
     return 0;
 }
 
 void open_program(char  ** arglist)
 {
-    int fd = open("info.txt", O_RDWR | O_APPEND, S_IRUSR | S_IWUSR);
 
-    dup2(fd, 1); //redirige stdout al fd
-    dup2(fd, 2); //redirige stderr al fd
-
-    close(fd);
     pid_t pid;
     int wstatus;
 
@@ -62,11 +68,9 @@ void separar_tokens(char *linea, char *delim, char *argv[])
 {
     char *token;
     int i = 0;
-
-    /* obtencion del primer token */
+    
     token = strtok(linea, delim);
 
-    /* recorre todos los tokens */
     while (token != NULL)
     {
         argv[i] = token;
