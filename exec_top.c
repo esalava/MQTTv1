@@ -15,7 +15,7 @@ void separar_tokens(char *linea, char *delim, char *argv[]);
 
 int main(int argc, char *argv[])
 {
-    char command_buf[MAXLINE] = "top -b -n 1 -E m";
+    char command_buf[MAXLINE] = "top -b -n 1 -E m";  //https://phoenixnap.com/kb/top-command-in-linux
     char delim[2] = " "; /* character delimitation */
     char *arglist[MAXLINE];
     int fd[2];  //using pipe
@@ -40,7 +40,9 @@ int main(int argc, char *argv[])
 
 void open_program(char  ** arglist)
 {
-    int fd = open("top.txt", O_RDWR | O_CREAT, S_IRUSR | S_IWUSR);
+    int fd = open("top.txt", O_RDWR | O_CREAT, S_IRUSR | S_IWUSR); 
+    
+    //https://stackoverflow.com/questions/2605130/redirecting-exec-output-to-a-buffer-or-file
 
     dup2(fd, 1); //redirige stdout al fd
     dup2(fd, 2); //redirige stderr al fd
