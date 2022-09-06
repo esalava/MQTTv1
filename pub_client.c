@@ -5,8 +5,13 @@
 #define LIMIT_READ 363 //nos favorece leer hasta esta parte del archivo top.txt
 
 //posiciones en donde se encuentra la informacion del archivo
-#define TASKS_POS 17      //13 //14
-#define CPU_POS 1         //23 //24
+#define TASKS_GEN_POS 17      //13 //14
+#define TASKS_RUN_POS 21
+#define TASKS_SLEEP_POS 23
+
+#define CPU_GEN_POS 1         //23 //24
+#define CPU_SYS_POS 5
+
 #define MEM_AVAIL_POS 29  //41 //42
 #define MEM_USED_POS  35  //47 //48
 
@@ -20,7 +25,10 @@ char *full_info;            //contendra la informacion que se enviara
 void update_top_file();
 void filter_top_file();
 void separar_tokens(char *linea, char *delim, char *argv[]);
-void join_full_info(char *cpu, char *tasks, char *memory);
+
+void join_full_info(char *tasks_gen, char *tasks_run, char *tasks_sleep, 
+					char *cpu_gen, char *cpu_sys,
+					char *memory);
 void parse_info(char *memory_percentage);
 void change_comma_for_period(char *str);
 void update_send_info();
@@ -101,30 +109,49 @@ void update_send_info(){
 	read_buffer[read_number] = '\0';
 
 	separar_tokens(read_buffer, " ", info_list);
-	
 
     parse_info(cmemory_percentage);
-    join_full_info(info_list[CPU_POS], info_list[TASKS_POS], cmemory_percentage);
+
+	join_full_info(info_list[TASKS_GEN_POS], info_list[TASKS_RUN_POS], info_list[TASKS_SLEEP_POS],
+				   info_list[CPU_GEN_POS], info_list[CPU_SYS_POS],
+				   cmemory_percentage);
 
 	close(fd_info_file);
 }
 
-//se hace un join por el caracter "," de la informacion a enviar (por conveniencia)
-void join_full_info(char *cpu, char *tasks, char *memory){
-    full_info = (char *) malloc( strlen(cpu) + strlen(tasks) + strlen(memory) + 1);
-    strcat(full_info, cpu);
+
+void join_full_info(char *tasks_gen, char *tasks_run, char *tasks_sleep, 
+					char *cpu_gen, char *cpu_sys,
+					char *memory){
+						
+    full_info = (char *) malloc(strlen(tasks_gen) + strlen(tasks_run) + strlen(tasks_sleep) +
+								strlen(cpu_gen) + strlen(cpu_sys) +
+								strlen(memory)+ 1);
+
+	change_comma_for_period(cpu_sys);
+
+    strcat(full_info, tasks_gen);
     strcat(full_info, ",");
-    strcat(full_info, tasks);
+    strcat(full_info, tasks_run);
     strcat(full_info, ",");
+    strcat(full_info, tasks_sleep);
+	strcat(full_info, ",");
+    strcat(full_info, cpu_gen);
+	strcat(full_info, ",");
+    strcat(full_info, cpu_sys);
+	strcat(full_info, ",");
     strcat(full_info, memory);
+
     full_info[strlen(full_info) - 1] = '\n';
 }
+
+
 
 //se realiza un parsing de le informacion y se obtiene el % de uso de la memoria principal
 void parse_info(char *memory_percentage)
 {
-    change_comma_for_period(info_list[TASKS_POS]);
-    change_comma_for_period(info_list[CPU_POS]);
+    change_comma_for_period(info_list[TASKS_GEN_POS]);
+    change_comma_for_period(info_list[CPU_GEN_POS]);
 
     float used_memory = strtol(info_list[MEM_USED_POS], NULL, 10);
     float total_memory = strtol(info_list[MEM_AVAIL_POS], NULL, 10);

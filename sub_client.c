@@ -54,7 +54,7 @@ int main(int argc, char **argv)
 	//se mantiene en constante escucha de lo mensajes que provengan del broker
 	while (1) {
 		if(Rio_readlineb(&rio, buf, MAXLINE)){
-			printf("%s: ",suscription_topic);
+			//printf("%s: ",suscription_topic);
             Fputs(buf, stdout);
         } else {
 			break;
