@@ -21,7 +21,7 @@
 #define LOG_MSG_SIZE 4096
 
 
-void forward_message(int connfd_pub, int connfd_sus, int topic[]);
+void forward_message(int connfd_pub, int connfd_sus, int topic[], char *publisher, char *suscriber);
 void *thread(void *vargp);
 void split(char *linea, char *delim, char *argv[]);
 int find_index_by_client_name(char *client_name);
@@ -124,7 +124,7 @@ int main(int argc, char **argv)
 
 
 //reenvio de mensaje de un publisher determinado a un suscriptor determinado por un topico
-void forward_message(int connfd_pub, int connfd_sus, int topic[])
+void forward_message(int connfd_pub, int connfd_sus, int topic[], char *publisher, char *suscriber)
 {
 	size_t n;
 	char buf[MAXLINE];
@@ -133,11 +133,11 @@ void forward_message(int connfd_pub, int connfd_sus, int topic[])
 	char main_log_message[MAXLINE*2];
 	
 
-	int publisher = connfd_pub;
-	int suscriber = connfd_sus;
+	int fd_publisher = connfd_pub;
+	int fd_suscriber = connfd_sus;
 
-	Rio_readinitb(&rio_src, publisher);
-	Rio_readinitb(&rio_dst, suscriber);
+	Rio_readinitb(&rio_src, fd_publisher);
+	Rio_readinitb(&rio_dst, fd_suscriber);
 
 	for(int i = 0; i < SHARINGTIME; i++){
 		if((n = Rio_readlineb(&rio_src, buf, MAXLINE))){	
@@ -145,38 +145,32 @@ void forward_message(int connfd_pub, int connfd_sus, int topic[])
 			char tmp_buf[100];
 			strcpy(tmp_buf, buf);
 			tmp_buf[strlen(tmp_buf)-1] = '\0';
-			sprintf(main_log_message, "Se ha recibido [%s] de [%d]", tmp_buf, publisher);
+			sprintf(main_log_message, "Se ha recibido [%s] de [%s]", tmp_buf, publisher);
 			write_log(main_log_message);
 
 			char *pub_available_info[10];  //informacion disponible para enviar
 			split(buf, ",", pub_available_info);  //la informacion de llega separadas por "," se separa
 			
-
-
 			for(int j = 0; j < 6; j++){
+				
 				if(topic[j] != -1){ //si es un topico valido a enviar
 
 					char string[50];
 					strcpy(string, string_topics[j]);
 					strcat(string, pub_available_info[j]);
-					string[strlen(string)+1] = '\n';
+					string[strlen(string)+1] = '\n';  //solo es un mensaje para enviar 
 
 					if(j < 5){
 						strcat(string, "\n");
 					}	
 					
-					
-					
-
-					Rio_writen(suscriber, string, strlen(string));
+					Rio_writen(fd_suscriber, string, strlen(string));
 				}
 			}
 
 		} else {
-
-			//printf("No hay mensaje disponible para reenviar...\n");
 			sprintf(main_log_message, "No hay mensaje disponible para enviar...\n");
-					write_log(main_log_message);
+			write_log(main_log_message);
 
 		}
 	}
@@ -188,7 +182,6 @@ void *thread(void *vargp)
 	char main_log_message[MAXLINE*3];
 	int connfd = *((int *) vargp);
 	pthread_detach(pthread_self());
-	//printf("New socket: %d\n",connfd);
 
 	sprintf(main_log_message, "Se ha abierto un socket: %d", connfd);
 	write_log(main_log_message);
@@ -221,8 +214,6 @@ void *thread(void *vargp)
 	 
 	
 	if(strcmp(buf_sus_info, "NONE") == 0 ){  
-		//en caso de que no tenga ninguna suscripcion no se guarda ningun topico (su metrica)
-		//printf("No tiene ninguna suscripcion\n");
 		sprintf(main_log_message, "%s no tiene ninguna suscripcion", buf_node_name);
 		write_log(main_log_message);
 
@@ -234,7 +225,7 @@ void *thread(void *vargp)
 
 
 		client_sus_list[fd_idx] = buf_suscription_info[0]; //se guarda el nombre del nodo que se encuentra subscrito
-		int subscribed_info[6]; //= {0,0,0,0,0,0};
+		int subscribed_info[6];
 		sprintf(main_log_message, "%s Se encuentra suscrito a: %s", buf_node_name, buf_sus_info);
 		write_log(main_log_message);
 
@@ -245,6 +236,7 @@ void *thread(void *vargp)
 		for(int k = 0; k < 6; k++){
 			topic_list[fd_idx][k] = subscribed_info[k];
 		}
+		printf("\n");
 
 	}
 
@@ -322,20 +314,15 @@ void forward_messages(){
 					topics_number[j] = topic_list[i][j];
 				}
 				
-
-				//informacion de control
-            	//printf("Publisher:{%s}, Suscriber:{%s}, Topic {%d}\n", publisher, suscriber, topic_number);
-
 				fd_pub = client_fd_list[find_index_by_client_name(publisher)];
 				fd_sus = client_fd_list[find_index_by_client_name(suscriber)];
 			
 				//informacion de control
-				//printf("Intento de envio desde fd_pub:[%d] a fd_sus:[%d]\n", fd_pub, fd_sus);
 				char main_log_message[MAXLINE];
 				sprintf(main_log_message, "Se envia informacion desde [%s] -> [%s]", publisher, suscriber);
 				write_log(main_log_message);
-
-				forward_message(fd_pub, fd_sus, topics_number);  //reenvio del mensaje
+				
+				forward_message(fd_pub, fd_sus, topics_number, publisher, suscriber);  //reenvio del mensaje
         	}
    	 	}	
 	}
@@ -391,7 +378,7 @@ void update_sus_info(char *suscription[10], int information[6]){
 
                      break;
 
-                } else {// (strcmp(suscription[1], "sleep") == 0){
+                } else {
 
                     for(int i = 0; i < 6; i++){
                         if(i != 2){
@@ -423,7 +410,7 @@ void update_sus_info(char *suscription[10], int information[6]){
 
                      break;
 
-                } else { //(strcmp(suscription[1], "sys") == 0){
+                } else {
 
                     for(int i = 0; i < 6; i++){
                         if(i != 4){
@@ -436,7 +423,7 @@ void update_sus_info(char *suscription[10], int information[6]){
 
             }
 
-            else /*(strcmp(suscription[0],"ram") == 0)*/{
+            else{
                 
                 if(strcmp(suscription[2], "#") == 0){
                     
@@ -448,7 +435,7 @@ void update_sus_info(char *suscription[10], int information[6]){
                     
                     break;
 
-                } else  /*(strcmp(suscription[1], "gen") == 0)*/{
+                } else {
 
                     for(int i = 0; i < 6; i++){
                         if(i != 5){
