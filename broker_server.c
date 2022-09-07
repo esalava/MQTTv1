@@ -236,7 +236,6 @@ void *thread(void *vargp)
 		for(int k = 0; k < 6; k++){
 			topic_list[fd_idx][k] = subscribed_info[k];
 		}
-		printf("\n");
 
 	}
 

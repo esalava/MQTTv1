@@ -1,14 +1,55 @@
-06/09/2022 [20:20:10]: Esperando por conexiones
-06/09/2022 [20:20:10]: Servidor escuchando en el puerto: 8090
-06/09/2022 [20:20:11]: Se ha abierto un socket: 5
-06/09/2022 [20:20:11]: Se ha conectado node1
-06/09/2022 [20:20:11]: node1 no tiene ninguna suscripcion
-06/09/2022 [20:20:13]: Se ha abierto un socket: 6
-06/09/2022 [20:20:13]: Se ha conectado node3
-06/09/2022 [20:20:13]: node3 Se encuentra suscrito a: node1
-460369592,-1,-1,0,-1,0,
-06/09/2022 [20:20:13]: Se envia informacion desde [node1] -> [node3]
-06/09/2022 [20:20:14]: Se ha recibido [286,285,0,0.0,0.0,48.663] de [node1]
-06/09/2022 [20:20:14]: Se envia informacion desde [node1] -> [node3]
-06/09/2022 [20:20:16]: Se ha recibido [286,285,0,1.4,0.0,48.560] de [node1]
-06/09/2022 [20:20:16]: Se envia informacion desde [node1] -> [node3]
+07/09/2022 [01:17:11]: Esperando por conexiones
+07/09/2022 [01:17:11]: Servidor escuchando en el puerto: 8090
+07/09/2022 [01:17:13]: Se ha abierto un socket: 5
+07/09/2022 [01:17:13]: Se ha conectado node1
+07/09/2022 [01:17:13]: node1 no tiene ninguna suscripcion
+07/09/2022 [01:17:15]: Se ha abierto un socket: 6
+07/09/2022 [01:17:15]: Se ha conectado node3
+07/09/2022 [01:17:15]: node3 Se encuentra suscrito a: node1
+07/09/2022 [01:17:15]: Se envia informacion desde [node1] -> [node3]
+07/09/2022 [01:17:15]: Se ha recibido [294,293,0,2.7,0.0,55.238] de [node1]
+07/09/2022 [01:17:15]: Se envia informacion desde [node1] -> [node3]
+07/09/2022 [01:17:17]: Se ha recibido [295,293,0,6.9,0.0,55.225] de [node1]
+07/09/2022 [01:17:17]: Se envia informacion desde [node1] -> [node3]
+07/09/2022 [01:17:19]: Se ha abierto un socket: 7
+07/09/2022 [01:17:19]: Se ha conectado node4
+07/09/2022 [01:17:19]: node4 Se encuentra suscrito a: node1
+07/09/2022 [01:17:19]: Se envia informacion desde [node1] -> [node3]
+07/09/2022 [01:17:19]: Se ha recibido [296,295,0,7.8,0.0,55.149] de [node1]
+07/09/2022 [01:17:19]: Se envia informacion desde [node1] -> [node4]
+07/09/2022 [01:17:21]: Se ha recibido [296,295,0,4.0,0.0,55.213] de [node1]
+07/09/2022 [01:17:21]: Se envia informacion desde [node1] -> [node3]
+07/09/2022 [01:17:23]: Se ha abierto un socket: 8
+07/09/2022 [01:17:23]: Se ha conectado node2
+07/09/2022 [01:17:23]: node2 no tiene ninguna suscripcion
+07/09/2022 [01:17:23]: Se envia informacion desde [node1] -> [node3]
+07/09/2022 [01:17:24]: Se ha recibido [297,295,0,1.4,0.0,55.161] de [node1]
+07/09/2022 [01:17:24]: Se envia informacion desde [node1] -> [node4]
+07/09/2022 [01:17:26]: Se ha recibido [297,296,0,2.7,0.0,55.225] de [node1]
+07/09/2022 [01:17:26]: Se envia informacion desde [node1] -> [node4]
+07/09/2022 [01:17:26]: Se ha abierto un socket: 9
+07/09/2022 [01:17:26]: Se ha conectado node5
+07/09/2022 [01:17:26]: node5 Se encuentra suscrito a: node2
+07/09/2022 [01:17:26]: Se envia informacion desde [node1] -> [node3]
+07/09/2022 [01:17:28]: Se ha recibido [298,297,0,2.9,0.0,55.161] de [node1]
+07/09/2022 [01:17:28]: Se envia informacion desde [node1] -> [node4]
+07/09/2022 [01:17:30]: Se ha recibido [298,296,0,15.9,0.0,55.174] de [node1]
+07/09/2022 [01:17:30]: Se envia informacion desde [node2] -> [node5]
+07/09/2022 [01:17:30]: Se ha recibido [297,296,0,5.3,0.0,55.225] de [node2]
+07/09/2022 [01:17:30]: Se envia informacion desde [node1] -> [node3]
+07/09/2022 [01:17:32]: Se ha recibido [298,297,0,2.7,0.0,55.200] de [node1]
+07/09/2022 [01:17:32]: Se envia informacion desde [node1] -> [node4]
+07/09/2022 [01:17:35]: Se ha recibido [298,297,0,2.9,0.0,55.161] de [node1]
+07/09/2022 [01:17:35]: Se envia informacion desde [node2] -> [node5]
+07/09/2022 [01:17:35]: Se ha recibido [298,297,0,6.7,0.0,55.200] de [node2]
+07/09/2022 [01:17:35]: Se envia informacion desde [node1] -> [node3]
+07/09/2022 [01:17:37]: Se ha recibido [298,297,0,2.9,0.0,55.161] de [node1]
+07/09/2022 [01:17:37]: Se envia informacion desde [node1] -> [node4]
+07/09/2022 [01:17:39]: Se ha recibido [298,297,0,1.5,0.0,55.161] de [node1]
+07/09/2022 [01:17:39]: Se envia informacion desde [node2] -> [node5]
+07/09/2022 [01:17:39]: Se ha recibido [298,297,0,4.3,0.0,55.174] de [node2]
+07/09/2022 [01:17:39]: Se envia informacion desde [node1] -> [node3]
+07/09/2022 [01:17:41]: Se ha recibido [297,296,0,2.7,0.0,55.174] de [node1]
+07/09/2022 [01:17:41]: Se envia informacion desde [node2] -> [node5]
+07/09/2022 [01:17:41]: Se ha recibido [298,297,0,2.7,0.0,55.174] de [node2]
+07/09/2022 [01:17:41]: Se envia informacion desde [node1] -> [node3]

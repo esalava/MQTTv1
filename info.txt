@@ -1,4 +1,4 @@
-%Cpu(s): 17,6 us,  4,4 sy,  0,0 ni, 77,9 id,  0,0 wa,  0,0 hi,  0,0 si,  0,0 st
-Tasks: 284 total,   1 running, 283 sleeping,   0 stopped,   0 zombie
-MiB Mem :   7817,7 total,   1231,7 free,   2756,9 used,   3829,0 buff/cache
-MiB Swap:   2048,0 total,   2041,9 free,      6,1 used.   4137,4 avail Mem 
+%Cpu(s): 35,2 us,  5,6 sy,  0,0 ni, 59,2 id,  0,0 wa,  0,0 hi,  0,0 si,  0,0 st
+Tasks: 293 total,   3 running, 290 sleeping,   0 stopped,   0 zombie
+MiB Mem :   7817,7 total,    474,8 free,   3025,5 used,   4317,3 buff/cache
+MiB Swap:   2048,0 total,   2041,9 free,      6,1 used.   3668,6 avail Mem 
